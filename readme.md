@@ -28,6 +28,8 @@ After cloning this repository, set up a virtual environment and install the requ
 #### On Linux or macOS
 
 ```bash
+git clone https://github.com/leandro-lorenzini/bitbucket-branch-lockdown.git
+cd bitbucket-branch-lockdown
 python3 -m venv .
 source bin/activate
 pip install -r requirements.txt
@@ -36,6 +38,8 @@ pip install -r requirements.txt
 #### On Windows (PowerShell)
 
 ```powershell
+git clone https://github.com/leandro-lorenzini/bitbucket-branch-lockdown.git
+cd bitbucket-branch-lockdown
 python -m venv .
 .\Scripts\activate
 pip install -r requirements.txt
