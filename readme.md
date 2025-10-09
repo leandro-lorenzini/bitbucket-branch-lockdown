@@ -1,0 +1,43 @@
+# Bitbucket Branch lockdown automation
+
+A script to automate the setup of branch protection rules in Bitbucket repositories.
+
+## Prerequisites
+
+- Python 3.x
+- Virtual environment
+
+## Recommended Workflow
+
+The following workflow will help you set up branch protection for your main branches (e.g., `production`, `development`), requiring approval before merging, and prevents their deletion.
+
+Use this workflow with caution, as it may delete existing branch restrictions based on your confirmation settings.
+
+```bash
+python3 -m venv .
+source bin/activate
+pip install -r requirements.txt
+
+export ATLASSIAN_EMAIL="you@example.com"
+export ATLASSIAN_API_TOKEN="your_api_token"
+export WORKSPACE="your-workspace-slug"
+export ALLOW_GROUPS="managers"
+export BRANCH_TYPES="production,development"
+export ALLOW_BRANCH_DELETE="no"
+export CONFIRM_DELETE_EXISTING_RULES="yes"
+python3 main.py
+```
+
+## Environment variables
+
+| Environment Variable               | Description                                                                                     | Required | Default Value |
+|------------------------------------|-------------------------------------------------------------------------------------------------|----------|----------------|
+| ATLASSIAN_EMAIL                    | Your Atlassian email address used for authentication                                            | Yes      | None           |
+| ATLASSIAN_API_TOKEN                | Your Atlassian API token used for authentication                                                | Yes      | None           |
+| WORKSPACE                          | Your Bitbucket workspace slug                                                                   | Yes      | None           |
+| ALLOW_GROUPS                       | Comma-separated list of groups allowed to push to protected branches                            | Yes      | None           |
+| BRANCHES                           | Comma-separated list of branches or branch patterns to protect (e.g., `main,release/*`)         | Either BRANCHES or BRANCH_TYPE | None |
+| BRANCH_TYPE                        | Comma-separated list of branch types (production, development, feature, release, hotfix)        | Either BRANCHES or BRANCH_TYPE | None |
+| ALLOW_BRANCH_DELETE                | Set to "yes" to allow deleting protected branches, "no" to prevent deletion                     | No       | no             |
+| ENFORCE_MERGE_CHECKS               | Set to "yes" to enforce merge checks, only available for Bitbucket Premium plans                | No       | no             |
+| CONFIRM_DELETE_EXISTING_RULES      | Set to "yes" to always delete existing branch restrictions, "no" to always keep them, unset for interactive prompt | No       | None |
