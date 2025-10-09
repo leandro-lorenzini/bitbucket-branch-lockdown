@@ -65,7 +65,7 @@ python3 main.py
 | ATLASSIAN_EMAIL                    | Your Atlassian email address used for authentication                                            | Yes      | None           |
 | ATLASSIAN_API_TOKEN                | Your Atlassian API token used for authentication                                                | Yes      | None           |
 | WORKSPACE                          | Your Bitbucket workspace slug                                                                   | Yes      | None           |
-| ALLOW_GROUPS                       | Comma-separated list of groups allowed to push to protected branches                            | Yes      | None           |
+| ALLOW_GROUPS                       | Comma-separated list of groups allowed to push to protected branches without a merge request    | Yes      | None           |
 | BRANCHES                           | Comma-separated list of branches or branch patterns to protect (e.g., `main,release/*`)         | Either BRANCHES or BRANCH_TYPE | None |
 | BRANCH_TYPE                        | Comma-separated list of branch types (production, development, feature, release, hotfix)        | Either BRANCHES or BRANCH_TYPE | None |
 | ALLOW_BRANCH_DELETE                | Set to "yes" to allow deleting protected branches, "no" to prevent deletion                     | No       | no             |
