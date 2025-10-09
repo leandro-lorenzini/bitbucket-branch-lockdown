@@ -29,10 +29,11 @@ Before running the tool, you'll need:
 
 1. Download the latest binary for your platform from the [Releases page](../../releases/latest):
    - **Windows**: `bitbucket-branch-lockdown-windows-amd64.exe`
-   - **macOS**: `bitbucket-branch-lockdown-macos-amd64`
+   - **macOS**: `bitbucket-branch-lockdown-macos-amd64` or `bitbucket-branch-lockdown-macos-arm64`
    - **Linux**: `bitbucket-branch-lockdown-linux-amd64`
 
 2. Make the binary executable (Linux/macOS only):
+
    ```bash
    chmod +x bitbucket-branch-lockdown-*
    ```
@@ -40,6 +41,7 @@ Before running the tool, you'll need:
 3. Set environment variables and run:
 
 **Linux/macOS:**
+
 ```bash
 export ATLASSIAN_EMAIL="your-email@example.com"
 export ATLASSIAN_API_TOKEN="your_api_token_here"
@@ -49,7 +51,7 @@ export BRANCH_TYPES="production,development"
 
 # Run the tool
 ./bitbucket-branch-lockdown-linux-amd64
-# or for macOS: ./bitbucket-branch-lockdown-macos-amd64
+# or for macOS: ./bitbucket-branch-lockdown-macos-amd64 or bitbucket-branch-lockdown-macos-arm64
 ```
 
 **Windows (Command Prompt):**

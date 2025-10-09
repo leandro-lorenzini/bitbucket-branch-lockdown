@@ -18,6 +18,10 @@ jobs:
           - os: macos-latest
             binary_name: bitbucket-branch-lockdown
             asset_name: bitbucket-branch-lockdown-macos-amd64
+          - os: macos-latest
+            binary_name: bitbucket-branch-lockdown
+            asset_name: bitbucket-branch-lockdown-macos-arm64
+            arch: arm64
           - os: ubuntu-latest
             binary_name: bitbucket-branch-lockdown
             asset_name: bitbucket-branch-lockdown-linux-amd64
@@ -40,6 +44,8 @@ jobs:
     - name: Build binary with PyInstaller
       run: |
         pyinstaller --onefile --name ${{ matrix.binary_name }} main.py
+      env:
+        ARCHFLAGS: ${{ matrix.arch == 'arm64' && '-arch arm64' || '' }}
 
     - name: Rename binary for release (Unix)
       if: runner.os != 'Windows'
@@ -52,7 +58,7 @@ jobs:
         move dist\${{ matrix.binary_name }} dist\${{ matrix.asset_name }}
 
     - name: Upload binary as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.asset_name }}
         path: dist/${{ matrix.asset_name }}
@@ -67,83 +73,31 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: ./dist
 
     - name: Display structure of downloaded files
       run: ls -R ./dist
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Create Release and Upload Assets
+      uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ github.ref_name }}
-        release_name: Release ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
         body: |
           ## Changes in ${{ github.ref_name }}
           
           ### Downloads
           - **Windows**: `bitbucket-branch-lockdown-windows-amd64.exe`
-          - **macOS**: `bitbucket-branch-lockdown-macos-amd64`
+          - **macOS (Intel)**: `bitbucket-branch-lockdown-macos-amd64`
+          - **macOS (Apple Silicon)**: `bitbucket-branch-lockdown-macos-arm64`
           - **Linux**: `bitbucket-branch-lockdown-linux-amd64`
-          
-          ### Usage
-          Download the appropriate binary for your platform and run it directly with environment variables:
-          
-          ```bash
-          # Set your environment variables
-          export ATLASSIAN_EMAIL="you@example.com"
-          export ATLASSIAN_API_TOKEN="your_api_token"
-          export WORKSPACE="your-workspace-slug"
-          export ALLOW_GROUPS="managers"
-          export BRANCH_TYPES="production,development"
-          
-          # Run the binary (example for Linux/macOS)
-          ./bitbucket-branch-lockdown-linux-amd64
-          ```
-          
-          For Windows:
-          ```cmd
-          set ATLASSIAN_EMAIL=you@example.com
-          set ATLASSIAN_API_TOKEN=your_api_token
-          set WORKSPACE=your-workspace-slug
-          set ALLOW_GROUPS=managers
-          set BRANCH_TYPES=production,development
-          
-          bitbucket-branch-lockdown-windows-amd64.exe
-          ```
+        files: |
+          ./dist/bitbucket-branch-lockdown-windows-amd64.exe/bitbucket-branch-lockdown-windows-amd64.exe
+          ./dist/bitbucket-branch-lockdown-macos-amd64/bitbucket-branch-lockdown-macos-amd64
+          ./dist/bitbucket-branch-lockdown-macos-arm64/bitbucket-branch-lockdown-macos-arm64
+          ./dist/bitbucket-branch-lockdown-linux-amd64/bitbucket-branch-lockdown-linux-amd64
         draft: false
         prerelease: false
-
-    - name: Upload Windows binary
-      uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dist/bitbucket-branch-lockdown-windows-amd64.exe/bitbucket-branch-lockdown-windows-amd64.exe
-        asset_name: bitbucket-branch-lockdown-windows-amd64.exe
-        asset_content_type: application/octet-stream
-
-    - name: Upload macOS binary
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dist/bitbucket-branch-lockdown-macos-amd64/bitbucket-branch-lockdown-macos-amd64
-        asset_name: bitbucket-branch-lockdown-macos-amd64
-        asset_content_type: application/octet-stream
-
-    - name: Upload Linux binary
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dist/bitbucket-branch-lockdown-linux-amd64/bitbucket-branch-lockdown-linux-amd64
-        asset_name: bitbucket-branch-lockdown-linux-amd64
-        asset_content_type: application/octet-stream
