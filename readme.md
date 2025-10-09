@@ -1,73 +1,188 @@
-# Bitbucket Branch lockdown automation
+# Bitbucket Branch Lockdown Automation
 
-A script to automate the setup of branch protection rules in Bitbucket repositories.
+A tool to automate the setup of branch protection rules across all repositories in a Bitbucket workspace.
 
-## Prerequisites
+## Getting Started
 
-- Python 3.x
-- Atlassian API token with appropriate permissions
-- Virtual environment
+### Step 1: Create an Atlassian API Token
 
-### Creating an API token
+1. Go to [Atlassian API tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+2. Click "Create API token"
+3. Set a name and expiry date for the token
+4. Select **Bitbucket** as the product
+5. Select the following scopes:
+   - `read:repository:bitbucket`
+   - `write:repository:bitbucket`
+   - `admin:repository:bitbucket`
+6. Create the token and **copy it immediately** (you won't be able to see it again)
 
-1. Go to API tokens: <https://id.atlassian.com/manage-profile/security/api-tokens>
-2. Create API token with scopes
-3. Set a name and an expiry date for it
-4. On the next step, select Bitbucket
-5. On the next step, select the following scopes:
-    1. read:repository:bitbucket
-    2. write:repository:bitbucket
-    3. admin:repository:bitbucket
-6. Confirm and create the token
-7. Copy the API token and store it securely, as you won't be able to see it again.
+### Step 2: Gather Required Information
 
-### Setting up a virtual environment
+Before running the tool, you'll need:
 
-After cloning this repository, set up a virtual environment and install the required packages.
+- **Atlassian Email**: Your Atlassian account email
+- **API Token**: The token you just created
+- **Workspace Slug**: Your Bitbucket workspace name (found in your workspace URL)
+- **Group Names**: Workspace groups that should have push access to protected branches
 
-#### On Linux or macOS
+### Step 3: Download and Run
 
+1. Download the latest binary for your platform from the [Releases page](../../releases/latest):
+   - **Windows**: `bitbucket-branch-lockdown-windows-amd64.exe`
+   - **macOS**: `bitbucket-branch-lockdown-macos-amd64`
+   - **Linux**: `bitbucket-branch-lockdown-linux-amd64`
+
+2. Make the binary executable (Linux/macOS only):
+   ```bash
+   chmod +x bitbucket-branch-lockdown-*
+   ```
+
+3. Set environment variables and run:
+
+**Linux/macOS:**
 ```bash
-python3 -m venv .
-source bin/activate
-pip install -r requirements.txt
+export ATLASSIAN_EMAIL="your-email@example.com"
+export ATLASSIAN_API_TOKEN="your_api_token_here"
+export WORKSPACE="your-workspace-slug"
+export ALLOW_GROUPS="managers,senior-developers"
+export BRANCH_TYPES="production,development"
+
+# Run the tool
+./bitbucket-branch-lockdown-linux-amd64
+# or for macOS: ./bitbucket-branch-lockdown-macos-amd64
 ```
 
-#### On Windows (PowerShell)
+**Windows (Command Prompt):**
+```cmd
+set ATLASSIAN_EMAIL=your-email@example.com
+set ATLASSIAN_API_TOKEN=your_api_token_here
+set WORKSPACE=your-workspace-slug
+set ALLOW_GROUPS=managers,senior-developers
+set BRANCH_TYPES=production,development
 
+bitbucket-branch-lockdown-windows-amd64.exe
+```
+
+**Windows (PowerShell):**
 ```powershell
-python -m venv .
-.\Scripts\activate
-pip install -r requirements.txt
+$env:ATLASSIAN_EMAIL="your-email@example.com"
+$env:ATLASSIAN_API_TOKEN="your_api_token_here"
+$env:WORKSPACE="your-workspace-slug"
+$env:ALLOW_GROUPS="managers,senior-developers"
+$env:BRANCH_TYPES="production,development"
+
+.\bitbucket-branch-lockdown-windows-amd64.exe
 ```
 
 ## Recommended Workflow
 
-The following workflow will help you set up branch protection for your main branches (e.g., `production`, `development`), requiring approval before merging, and prevents their deletion.
+This tool helps you implement a secure branching strategy across all repositories in your workspace. Here's what it does:
 
-Use this workflow with caution, as it may delete existing branch restrictions based on your confirmation settings.
+1. **Protects critical branches** (production, development, etc.)
+2. **Requires approvals** before merging pull requests
+3. **Prevents force pushes** and history rewriting
+4. **Controls who can delete** protected branches
+5. **Ensures only authorized groups** can push directly
+
+### Basic Configuration
+
+The most common setup protects production and development branches:
 
 ```bash
-export ATLASSIAN_EMAIL="you@example.com"
+# Required settings
+export ATLASSIAN_EMAIL="your-email@example.com"
 export ATLASSIAN_API_TOKEN="your_api_token"
 export WORKSPACE="your-workspace-slug"
 export ALLOW_GROUPS="managers"
 export BRANCH_TYPES="production,development"
-export ALLOW_BRANCH_DELETE="no"
-export CONFIRM_DELETE_EXISTING_RULES="yes"
-python3 main.py
+
+# Optional settings
+export ALLOW_BRANCH_DELETE="no"                    # Prevent branch deletion
+export CONFIRM_DELETE_EXISTING_RULES="yes"         # Auto-confirm rule cleanup
+export ENFORCE_MERGE_CHECKS="yes"                  # Requires Bitbucket Premium
 ```
 
-## Environment variables
+### Advanced Configuration
 
-| Environment Variable               | Description                                                                                     | Required | Default Value |
-|------------------------------------|-------------------------------------------------------------------------------------------------|----------|----------------|
-| ATLASSIAN_EMAIL                    | Your Atlassian email address used for authentication                                            | Yes      | None           |
-| ATLASSIAN_API_TOKEN                | Your Atlassian API token used for authentication                                                | Yes      | None           |
-| WORKSPACE                          | Your Bitbucket workspace slug                                                                   | Yes      | None           |
-| ALLOW_GROUPS                       | Comma-separated list of groups allowed to push to protected branches                            | Yes      | None           |
-| BRANCHES                           | Comma-separated list of branches or branch patterns to protect (e.g., `main,release/*`)         | Either BRANCHES or BRANCH_TYPE | None |
-| BRANCH_TYPE                        | Comma-separated list of branch types (production, development, feature, release, hotfix)        | Either BRANCHES or BRANCH_TYPE | None |
-| ALLOW_BRANCH_DELETE                | Set to "yes" to allow deleting protected branches, "no" to prevent deletion                     | No       | no             |
-| ENFORCE_MERGE_CHECKS               | Set to "yes" to enforce merge checks, only available for Bitbucket Premium plans                | No       | no             |
-| CONFIRM_DELETE_EXISTING_RULES      | Set to "yes" to always delete existing branch restrictions, "no" to always keep them, unset for interactive prompt | No       | None |
+You can also protect specific branch patterns instead of branch types:
+
+```bash
+export BRANCHES="main,master,release/*,hotfix/*"   # Use this instead of BRANCH_TYPES
+```
+
+## Configuration Reference
+
+| Variable | Description | Required | Example |
+|----------|-------------|----------|---------|
+| `ATLASSIAN_EMAIL` | Your Atlassian account email | Yes | `user@company.com` |
+| `ATLASSIAN_API_TOKEN` | Your Atlassian API token | Yes | `ATB...xyz` |
+| `WORKSPACE` | Bitbucket workspace slug | Yes | `my-company` |
+| `ALLOW_GROUPS` | Groups allowed to push (comma-separated) | Yes | `managers,leads` |
+| `BRANCH_TYPES` | Branch types to protect | Either this or `BRANCHES` | `production,development` |
+| `BRANCHES` | Specific branches/patterns to protect | Either this or `BRANCH_TYPES` | `main,release/*` |
+| `ALLOW_BRANCH_DELETE` | Allow deleting protected branches | No | `yes` or `no` (default: `no`) |
+| `ENFORCE_MERGE_CHECKS` | Enforce merge checks (Premium only) | No | `yes` or `no` (default: `no`) |
+| `CONFIRM_DELETE_EXISTING_RULES` | Auto-confirm rule deletion | No | `yes`, `no`, or unset for prompt |
+
+## Development Setup
+
+If you want to modify the tool or run it from source:
+
+### Prerequisites
+
+- Python 3.7+
+- pip
+
+### Installation
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/leandro-lorenzini/bitbucket-branch-lockdown.git
+   cd bitbucket-branch-lockdown
+   ```
+
+2. Create and activate a virtual environment:
+
+   **Linux/macOS:**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+   **Windows:**
+   ```cmd
+   python -m venv venv
+   venv\Scripts\activate
+   ```
+
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Run from source:
+   ```bash
+   python main.py
+   ```
+
+### Building Binaries
+
+To build your own binaries:
+
+```bash
+pip install pyinstaller
+pyinstaller --onefile --name bitbucket-branch-lockdown main.py
+```
+
+The binary will be created in the `dist/` directory.
+
+### Creating Releases
+
+New releases with pre-built binaries are automatically created when you push a version tag:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This triggers a GitHub Actions workflow that builds binaries for all platforms and creates a release.
