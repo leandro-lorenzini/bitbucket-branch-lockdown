@@ -75,7 +75,7 @@ $env:ALLOW_GROUPS = "managers"
 $env:BRANCH_TYPES = "production,development"
 $env:ALLOW_BRANCH_DELETE = "no"
 $env:CONFIRM_DELETE_EXISTING_RULES = "yes"
-
+python main.py
 ```
 
 ## Environment variables
