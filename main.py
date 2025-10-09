@@ -39,8 +39,7 @@ def check_required_envs():
     missing = []
     if not WORKSPACE:
         missing.append("WORKSPACE")
-    if not ALLOW_GROUPS or ALLOW_GROUPS == [""]:
-        missing.append("ALLOW_GROUPS")
+    # ALLOW_GROUPS is now optional
     branch_types = [t.strip() for t in BRANCH_TYPES.split(",") if t.strip()]
     branches_set = BRANCHES and BRANCHES != [""] and any(BRANCHES)
     branch_type_set = bool(branch_types)
@@ -149,45 +148,45 @@ def ensure_rules_for_branch(workspace: str, repo_slug: str, branch_or_type: str,
                             auth: HTTPBasicAuth, headers: Dict[str, str],
                             use_branch_type: bool = False) -> None:
     # Ensure all groups are added to the repo before applying restrictions
-    ensure_groups_in_repo(workspace, repo_slug, allow_groups, auth, headers)
+    # Only ensure groups if any are specified
+    if allow_groups:
+        ensure_groups_in_repo(workspace, repo_slug, allow_groups, auth, headers)
 
     if use_branch_type:
         common = {"branch_match_kind": "branching_model", "branch_type": branch_or_type}
     else:
         common = {"branch_match_kind": "glob", "pattern": branch_or_type}
 
-    rules_to_apply: List[Dict[str, Any]] = [
-        # 1) Write access: only specific groups can PUSH
-        {
+    rules_to_apply: List[Dict[str, Any]] = []
+    # 1) Write access: only specific groups can PUSH, if any groups specified
+    if allow_groups:
+        rules_to_apply.append({
             "kind": "push",
             **common,
             "groups": [{"slug": g.strip()} for g in allow_groups if g.strip()],
-        },
-        # 2) Prevent deleting this branch unless ALLOW_BRANCH_DELETE is set
-        # If ALLOW_BRANCH_DELETE is False, add the restriction
-        *(
-            [] if ALLOW_BRANCH_DELETE else [{
-                "kind": "delete",
-                **common,
-            }]
-        ),
-        # 3) Prevent rewriting branch history (force push)
-        {
-            "kind": "force",
+        })
+    # 2) Prevent deleting this branch unless ALLOW_BRANCH_DELETE is set
+    if not ALLOW_BRANCH_DELETE:
+        rules_to_apply.append({
+            "kind": "delete",
             **common,
-        },
-        # 4) Minimum approvals: set to 1
-        {
-            "kind": "require_approvals_to_merge",
-            **common,
-            "value": 1,
-        },
-        # 5) Reset requested changes when source branch is modified
-        {
-            "kind": "reset_pullrequest_changes_requested_on_change",
-            **common,
-        },
-    ]
+        })
+    # 3) Prevent rewriting branch history (force push)
+    rules_to_apply.append({
+        "kind": "force",
+        **common,
+    })
+    # 4) Minimum approvals: set to 1
+    rules_to_apply.append({
+        "kind": "require_approvals_to_merge",
+        **common,
+        "value": 1,
+    })
+    # 5) Reset requested changes when source branch is modified
+    rules_to_apply.append({
+        "kind": "reset_pullrequest_changes_requested_on_change",
+        **common,
+    })
     if ENFORCE_MERGE_CHECKS:
         rules_to_apply.append({
             "kind": "enforce_merge_checks",
