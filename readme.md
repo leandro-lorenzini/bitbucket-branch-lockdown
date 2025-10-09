@@ -41,6 +41,7 @@ pip install -r requirements.txt
 git clone https://github.com/leandro-lorenzini/bitbucket-branch-lockdown.git
 cd bitbucket-branch-lockdown
 python -m venv .
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\Scripts\activate
 pip install -r requirements.txt
 ```
