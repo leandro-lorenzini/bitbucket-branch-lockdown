@@ -51,6 +51,8 @@ The following workflow will help you set up branch protection for your main bran
 
 Use this workflow with caution, as it may delete existing branch restrictions based on your confirmation settings.
 
+#### On Linux or macOS
+
 ```bash
 export ATLASSIAN_EMAIL="you@example.com"
 export ATLASSIAN_API_TOKEN="your_api_token"
@@ -60,6 +62,19 @@ export BRANCH_TYPES="production,development"
 export ALLOW_BRANCH_DELETE="no"
 export CONFIRM_DELETE_EXISTING_RULES="yes"
 python3 main.py
+```
+
+### On Windows (PowerShell)
+
+```powershell
+$env:ATLASSIAN_EMAIL = "you@example.com"
+$env:ATLASSIAN_API_TOKEN = "your_api_token"
+$env:WORKSPACE = "your-workspace-slug"
+$env:ALLOW_GROUPS = "managers"
+$env:BRANCH_TYPES = "production,development"
+$env:ALLOW_BRANCH_DELETE = "no"
+$env:CONFIRM_DELETE_EXISTING_RULES = "yes"
+
 ```
 
 ## Environment variables
