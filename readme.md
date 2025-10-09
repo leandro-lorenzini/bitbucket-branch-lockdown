@@ -5,7 +5,41 @@ A script to automate the setup of branch protection rules in Bitbucket repositor
 ## Prerequisites
 
 - Python 3.x
+- Atlassian API token with appropriate permissions
 - Virtual environment
+
+### Creating an API token
+
+1. Go to API tokens: <https://id.atlassian.com/manage-profile/security/api-tokens>
+2. Create API token with scopes
+3. Set a name and an expiry date for it
+4. On the next step, select Bitbucket
+5. On the next step, select the following scopes:
+    1. read:repository:bitbucket
+    2. write:repository:bitbucket
+    3. admin:repository:bitbucket
+6. Confirm and create the token
+7. Copy the API token and store it securely, as you won't be able to see it again.
+
+### Setting up a virtual environment
+
+After cloning this repository, set up a virtual environment and install the required packages.
+
+### On Linux or macOS
+
+```bash
+python3 -m venv .
+source bin/activate
+pip install -r requirements.txt
+```
+
+### On Windows (PowerShell)
+
+```powershell
+python -m venv .
+.\Scripts\activate
+pip install -r requirements.txt
+```
 
 ## Recommended Workflow
 
@@ -14,10 +48,6 @@ The following workflow will help you set up branch protection for your main bran
 Use this workflow with caution, as it may delete existing branch restrictions based on your confirmation settings.
 
 ```bash
-python3 -m venv .
-source bin/activate
-pip install -r requirements.txt
-
 export ATLASSIAN_EMAIL="you@example.com"
 export ATLASSIAN_API_TOKEN="your_api_token"
 export WORKSPACE="your-workspace-slug"
