@@ -158,12 +158,20 @@ def ensure_rules_for_branch(workspace: str, repo_slug: str, branch_or_type: str,
         common = {"branch_match_kind": "glob", "pattern": branch_or_type}
 
     rules_to_apply: List[Dict[str, Any]] = []
-    # 1) Write access: only specific groups can PUSH, if any groups specified
+    # 1) Write access: only specific groups can PUSH, or block all if none specified
     if allow_groups:
         rules_to_apply.append({
             "kind": "push",
             **common,
             "groups": [{"slug": g.strip()} for g in allow_groups if g.strip()],
+        })
+    else:
+        # No groups specified: block all non-admins from pushing
+        rules_to_apply.append({
+            "kind": "push",
+            **common,
+            "groups": [],
+            "users": [],
         })
     # 2) Prevent deleting this branch unless ALLOW_BRANCH_DELETE is set
     if not ALLOW_BRANCH_DELETE:
