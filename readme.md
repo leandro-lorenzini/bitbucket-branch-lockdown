@@ -58,7 +58,6 @@ Use this workflow with caution, as it may delete existing branch restrictions ba
 export ATLASSIAN_EMAIL="you@example.com"
 export ATLASSIAN_API_TOKEN="your_api_token"
 export WORKSPACE="your-workspace-slug"
-export ALLOW_GROUPS="managers"
 export BRANCH_TYPES="production,development"
 export ALLOW_BRANCH_DELETE="no"
 export CONFIRM_DELETE_EXISTING_RULES="yes"
