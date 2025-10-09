@@ -25,7 +25,7 @@ A script to automate the setup of branch protection rules in Bitbucket repositor
 
 After cloning this repository, set up a virtual environment and install the required packages.
 
-### On Linux or macOS
+#### On Linux or macOS
 
 ```bash
 python3 -m venv .
@@ -33,7 +33,7 @@ source bin/activate
 pip install -r requirements.txt
 ```
 
-### On Windows (PowerShell)
+#### On Windows (PowerShell)
 
 ```powershell
 python -m venv .
