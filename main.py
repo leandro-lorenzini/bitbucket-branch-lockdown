@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-bitbucket_lockdown.py
-- Applies branch restrictions to 'main' and 'master' across all repos in a workspace.
-- Auth: Atlassian account API token (Basic: email + token).
-"""
 
 import os
 import sys
