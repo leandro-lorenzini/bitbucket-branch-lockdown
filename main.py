@@ -19,6 +19,7 @@ ATLASSIAN_API_TOKEN = os.getenv("ATLASSIAN_API_TOKEN")
 ENFORCE_MERGE_CHECKS = os.getenv("ENFORCE_MERGE_CHECKS", "").lower() in ("1", "true", "yes")
 ALLOW_BRANCH_DELETE = os.getenv("ALLOW_BRANCH_DELETE", "").lower() in ("1", "true", "yes")
 REPOSITORIES = (os.getenv("REPOSITORIES") or "").split(",")
+RESET_APPROVALS_ON_CHANGE = os.getenv("RESET_APPROVALS_ON_CHANGE", "").lower() in ("1", "true", "yes")
 
 BASE = "https://api.bitbucket.org/2.0"
 PAGELEN = 100
@@ -191,6 +192,12 @@ def ensure_rules_for_branch(workspace: str, repo_slug: str, branch_or_type: str,
         "kind": "reset_pullrequest_changes_requested_on_change",
         **common,
     })
+    # 6) Reset approvals when source branch is modified (if enabled)
+    if RESET_APPROVALS_ON_CHANGE:
+        rules_to_apply.append({
+            "kind": "reset_pullrequest_approvals_on_change",
+            **common,
+        })
     if ENFORCE_MERGE_CHECKS:
         rules_to_apply.append({
             "kind": "enforce_merge_checks",

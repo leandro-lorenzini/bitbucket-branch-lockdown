@@ -91,3 +91,4 @@ python main.py
 | ENFORCE_MERGE_CHECKS               | Set to "yes" to enforce merge checks, only available for Bitbucket Premium plans                | No       | no             |
 | CONFIRM_DELETE_EXISTING_RULES      | Set to "yes" to always delete existing branch restrictions, "no" to always keep them, unset for interactive prompt | No       | None |
 | REPOSITORIES      | Comma-separated list of repositories that you want to run this script for | No       | None |
+| RESET_APPROVALS_ON_CHANGE      | If approvals should be reset on changes in source branch | No       | None |
