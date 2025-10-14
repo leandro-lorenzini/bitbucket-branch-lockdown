@@ -255,11 +255,9 @@ def main():
     workspace = args.workspace.strip()
     branches = [b.strip() for b in args.branches.split(",") if b.strip()]
     allow_groups = [g.strip() for g in args.groups.split(",") if g.strip()]
-    only = {r.strip() for r in args.only.split(",") if r.strip()}
 
     repositories = [r.strip() for r in args.repositories.split(",") if r.strip()]
-    if repositories:
-        only = set(repositories)
+    only = set(repositories) if repositories else set()
 
     branch_types = [t.strip() for t in args.branch_type.split(",") if t.strip()]
     use_branch_type = bool(branch_types)
