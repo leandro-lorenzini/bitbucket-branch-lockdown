@@ -89,6 +89,6 @@ python main.py
 | BRANCH_TYPE                        | Comma-separated list of branch types (production, development, feature, release, hotfix)        | Either BRANCHES or BRANCH_TYPE | None |
 | ALLOW_BRANCH_DELETE                | Set to "yes" to allow deleting protected branches, "no" to prevent deletion                     | No       | no             |
 | ENFORCE_MERGE_CHECKS               | Set to "yes" to enforce merge checks, only available for Bitbucket Premium plans                | No       | no             |
+| RESET_APPROVALS_ON_CHANGE      | Set to "yes" to reset approvals after changes in source branch | No       | None |
 | CONFIRM_DELETE_EXISTING_RULES      | Set to "yes" to always delete existing branch restrictions, "no" to always keep them, unset for interactive prompt | No       | None |
 | REPOSITORIES      | Comma-separated list of repositories that you want to run this script for | No       | None |
-| RESET_APPROVALS_ON_CHANGE      | If approvals should be reset on changes in source branch | No       | None |
