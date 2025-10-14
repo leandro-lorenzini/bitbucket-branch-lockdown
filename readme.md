@@ -90,3 +90,4 @@ python main.py
 | ALLOW_BRANCH_DELETE                | Set to "yes" to allow deleting protected branches, "no" to prevent deletion                     | No       | no             |
 | ENFORCE_MERGE_CHECKS               | Set to "yes" to enforce merge checks, only available for Bitbucket Premium plans                | No       | no             |
 | CONFIRM_DELETE_EXISTING_RULES      | Set to "yes" to always delete existing branch restrictions, "no" to always keep them, unset for interactive prompt | No       | None |
+| REPOSITORIES      | Comma-separated list of repositories that you want to run this script for | No       | None |

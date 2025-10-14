@@ -18,6 +18,7 @@ ATLASSIAN_EMAIL = os.getenv("ATLASSIAN_EMAIL")
 ATLASSIAN_API_TOKEN = os.getenv("ATLASSIAN_API_TOKEN")
 ENFORCE_MERGE_CHECKS = os.getenv("ENFORCE_MERGE_CHECKS", "").lower() in ("1", "true", "yes")
 ALLOW_BRANCH_DELETE = os.getenv("ALLOW_BRANCH_DELETE", "").lower() in ("1", "true", "yes")
+REPOSITORIES = (os.getenv("REPOSITORIES") or "").split(",")
 
 BASE = "https://api.bitbucket.org/2.0"
 PAGELEN = 100
@@ -247,13 +248,18 @@ def main():
                         help="Comma-separated workspace group slugs allowed to push/merge")
     parser.add_argument("--branch-type", default=BRANCH_TYPES,
                         help="Comma-separated Bitbucket branch types to protect (e.g. production,development,feature,release,hotfix)")
-    parser.add_argument("--only", default="", help="Comma-separated repo slugs to limit scope (optional)")
+    parser.add_argument("--repositories", default=",".join(REPOSITORIES),
+                        help="Comma-separated repo slugs to process")
     args = parser.parse_args()
 
     workspace = args.workspace.strip()
     branches = [b.strip() for b in args.branches.split(",") if b.strip()]
     allow_groups = [g.strip() for g in args.groups.split(",") if g.strip()]
     only = {r.strip() for r in args.only.split(",") if r.strip()}
+
+    repositories = [r.strip() for r in args.repositories.split(",") if r.strip()]
+    if repositories:
+        only = set(repositories)
 
     branch_types = [t.strip() for t in args.branch_type.split(",") if t.strip()]
     use_branch_type = bool(branch_types)
