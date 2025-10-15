@@ -20,6 +20,8 @@ ENFORCE_MERGE_CHECKS = os.getenv("ENFORCE_MERGE_CHECKS", "").lower() in ("1", "t
 ALLOW_BRANCH_DELETE = os.getenv("ALLOW_BRANCH_DELETE", "").lower() in ("1", "true", "yes")
 REPOSITORIES = (os.getenv("REPOSITORIES") or "").split(",")
 RESET_APPROVALS_ON_CHANGE = os.getenv("RESET_APPROVALS_ON_CHANGE", "").lower() in ("1", "true", "yes")
+WRITE_ACCESS_MODE = os.getenv("WRITE_ACCESS_MODE", "everyone").strip().lower()
+MERGE_ACCESS_MODE = os.getenv("MERGE_ACCESS_MODE", "everyone").strip().lower()
 
 BASE = "https://api.bitbucket.org/2.0"
 PAGELEN = 100
@@ -36,11 +38,10 @@ def check_required_envs():
     missing = []
     if not WORKSPACE:
         missing.append("WORKSPACE")
-    # ALLOW_GROUPS is now optional
+    # ALLOW_GROUPS is required if write or merge access is restricted to groups
     branch_types = [t.strip() for t in BRANCH_TYPES.split(",") if t.strip()]
     branches_set = BRANCHES and BRANCHES != [""] and any(BRANCHES)
     branch_type_set = bool(branch_types)
-    # Only require one, not both
     if branches_set and branch_type_set:
         die("Set only one of BRANCHES or BRANCH_TYPES, never both.")
     if not branches_set and not branch_type_set:
@@ -49,7 +50,8 @@ def check_required_envs():
         missing.append("ATLASSIAN_EMAIL")
     if not ATLASSIAN_API_TOKEN:
         missing.append("ATLASSIAN_API_TOKEN")
-    # Optionally: ENFORCE_MERGE_CHECKS is not required
+    if (WRITE_ACCESS_MODE == "groups" or MERGE_ACCESS_MODE == "groups") and not any(ALLOW_GROUPS):
+        missing.append("ALLOW_GROUPS (required for group-based write/merge access)")
     if missing:
         die(f"Missing required env vars: {', '.join(missing)}")
 
@@ -156,14 +158,13 @@ def ensure_rules_for_branch(workspace: str, repo_slug: str, branch_or_type: str,
 
     rules_to_apply: List[Dict[str, Any]] = []
     # 1) Write access: only specific groups can PUSH, or block all if none specified
-    if allow_groups:
+    if WRITE_ACCESS_MODE == "groups":
         rules_to_apply.append({
             "kind": "push",
             **common,
             "groups": [{"slug": g.strip()} for g in allow_groups if g.strip()],
         })
     else:
-        # No groups specified: block all non-admins from pushing
         rules_to_apply.append({
             "kind": "push",
             **common,
@@ -203,6 +204,17 @@ def ensure_rules_for_branch(workspace: str, repo_slug: str, branch_or_type: str,
             "kind": "enforce_merge_checks",
             **common,
         })
+
+    # Merge access restriction
+    if MERGE_ACCESS_MODE == "groups":
+        rules_to_apply.append({
+            "kind": "restrict_merges",
+            **common,
+            "groups": [{"slug": g.strip()} for g in allow_groups if g.strip()],
+        })
+    elif MERGE_ACCESS_MODE == "everyone":
+        # Allow everyone with access to merge (no restriction)
+        pass
 
     existing = list_branch_restrictions(workspace, repo_slug, auth, headers)
     existing_keys: Set[Tuple[Any, Any, Any, Any]] = {
@@ -245,7 +257,65 @@ def prompt_delete_existing_restrictions(workspace: str, repo_slug: str, auth: HT
                 delete_branch_restriction(workspace, repo_slug, r["id"], auth, headers)
 
 
+def prompt_for_access_modes():
+    global WRITE_ACCESS_MODE, MERGE_ACCESS_MODE, ALLOW_GROUPS
+    
+
+
+def prompt_for_env_vars():
+    global WORKSPACE, ATLASSIAN_EMAIL, ATLASSIAN_API_TOKEN
+    global BRANCHES, BRANCH_TYPES, REPOSITORIES
+    global ENFORCE_MERGE_CHECKS, ALLOW_BRANCH_DELETE, RESET_APPROVALS_ON_CHANGE
+    global WRITE_ACCESS_MODE, MERGE_ACCESS_MODE, ALLOW_GROUPS
+
+    if not WORKSPACE:
+        WORKSPACE = input("Enter Bitbucket workspace slug: ").strip()
+    if not ATLASSIAN_EMAIL:
+        ATLASSIAN_EMAIL = input("Enter Atlassian email: ").strip()
+    if not ATLASSIAN_API_TOKEN:
+        ATLASSIAN_API_TOKEN = input("Enter Atlassian API token: ").strip()
+
+    # Branches or branch types
+    branches = [b.strip() for b in BRANCHES if b.strip()]
+    branch_types = [t.strip() for t in BRANCH_TYPES.split(",") if t.strip()]
+    if not branches and not branch_types:
+        mode = input("Protect by [branches/branch_types]? ").strip().lower()
+        if mode == "branch_types":
+            BRANCH_TYPES = input("Enter comma-separated branch types to protect: ").strip()
+        else:
+            BRANCHES = input("Enter comma-separated branches to protect: ").strip().split(",")
+    # Repositories
+    if not any(REPOSITORIES):
+        repos_str = input("Enter comma-separated repo slugs to process (leave blank for all): ").strip()
+        REPOSITORIES = repos_str.split(",") if repos_str else []
+
+    # ENFORCE_MERGE_CHECKS
+    if "ENFORCE_MERGE_CHECKS" not in os.environ:
+        ENFORCE_MERGE_CHECKS = input("Enforce merge checks? [y/N]: ").strip().lower() in ("y", "yes", "1")
+
+    # ALLOW_BRANCH_DELETE
+    if "ALLOW_BRANCH_DELETE" not in os.environ:
+        ALLOW_BRANCH_DELETE = input("Allow protected branch deletion? [y/N]: ").strip().lower() in ("y", "yes", "1")
+
+    # RESET_APPROVALS_ON_CHANGE
+    if "RESET_APPROVALS_ON_CHANGE" not in os.environ:
+        RESET_APPROVALS_ON_CHANGE = input("Reset approvals when source branch is modified? [y/N]: ").strip().lower() in ("y", "yes", "1")
+
+    # WRITE_ACCESS_MODE
+    if not WRITE_ACCESS_MODE not in os.environ:
+        WRITE_ACCESS_MODE = input("Who should have write access? [everyone/groups]: ").strip().lower() or "everyone"
+
+    # MERGE_ACCESS_MODE
+    if not MERGE_ACCESS_MODE not in os.environ:
+        MERGE_ACCESS_MODE = input("Who should have merge access? [everyone/groups]: ").strip().lower() or "everyone"
+    # ALLOW_GROUPS
+    if (WRITE_ACCESS_MODE == "groups" or MERGE_ACCESS_MODE == "groups") and not any(ALLOW_GROUPS):
+        groups_str = input("Enter comma-separated group slugs for access: ").strip()
+        ALLOW_GROUPS = [g.strip() for g in groups_str.split(",") if g.strip()]
+
+
 def main():
+    prompt_for_env_vars()
     check_required_envs()
     parser = argparse.ArgumentParser(description="Apply Bitbucket branch restrictions across repos.")
     parser.add_argument("--workspace", default=WORKSPACE, help="Workspace slug")
@@ -278,9 +348,41 @@ def main():
         print(f"[INFO] Branch types: {branch_types}")
     else:
         print(f"[INFO] Branches:  {branches}")
-    print(f"[INFO] Groups:    {allow_groups or '(none)'}")
+
+    # Write access info
+    if WRITE_ACCESS_MODE == "groups":
+        print("[INFO] Only specific people or groups (ALLOW_GROUPS) have write access.")
+        print(f"[INFO]   Groups: {allow_groups or '(none)'}")
+    else:
+        print("[INFO] Everyone with access to the repository has write access.")
+
     if only:
         print(f"[INFO] Limiting to repos: {sorted(only)}")
+
+    # Descriptive info for ENFORCE_MERGE_CHECKS
+    if ENFORCE_MERGE_CHECKS:
+        print("[INFO] Merge checks will be enforced before merging.")
+    else:
+        print("[INFO] Merge checks will NOT be enforced before merging.")
+
+    # Descriptive info for ALLOW_BRANCH_DELETE
+    if ALLOW_BRANCH_DELETE:
+        print("[INFO] Protected branches can be deleted by users with permission.")
+    else:
+        print("[INFO] Protected branches cannot be deleted.")
+
+    # Descriptive info for RESET_APPROVALS_ON_CHANGE
+    if RESET_APPROVALS_ON_CHANGE:
+        print("[INFO] Approvals will be reset when the source branch is modified.")
+    else:
+        print("[INFO] Approvals will NOT be reset when the source branch is modified.")
+
+    # Descriptive info for MERGE_ACCESS
+    if MERGE_ACCESS_MODE == "groups":
+        print("[INFO] Only specific people or groups (ALLOW_GROUPS) have merge access.")
+        print(f"[INFO]   Groups: {allow_groups or '(none)'}")
+    else:
+        print("[INFO] Everyone with access to the repository has merge access.")
 
     try:
         for repo in get_all_repos(workspace, auth, headers):
