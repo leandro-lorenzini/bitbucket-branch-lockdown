@@ -18,6 +18,7 @@ A script to automate the setup of branch protection rules in Bitbucket repositor
     1. read:repository:bitbucket
     2. write:repository:bitbucket
     3. admin:repository:bitbucket
+    4. write:permission:bitbucket
 6. Confirm and create the token
 7. Copy the API token and store it securely, as you won't be able to see it again.
 
