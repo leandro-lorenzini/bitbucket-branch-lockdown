@@ -73,12 +73,15 @@ def get_all_repos(workspace: str, auth: HTTPBasicAuth, headers: Dict[str, str]) 
         resp = http_get(url, auth, headers)
         data = resp.json()
         for repo in data.get("values", []):
+            # Lowercase the slug before yielding
+            repo["slug"] = repo["slug"].lower()
             yield repo
         url = data.get("next")
 
 
 def list_branch_restrictions(workspace: str, repo_slug: str,
                              auth: HTTPBasicAuth, headers: Dict[str, str]) -> List[Dict[str, Any]]:
+    repo_slug = repo_slug.lower()
     url = f"{BASE}/repositories/{workspace}/{repo_slug}/branch-restrictions?pagelen={PAGELEN}"
     out: List[Dict[str, Any]] = []
     while url:
@@ -91,6 +94,7 @@ def list_branch_restrictions(workspace: str, repo_slug: str,
 
 def create_branch_restriction(workspace: str, repo_slug: str, rule: Dict[str, Any],
                               auth: HTTPBasicAuth, headers: Dict[str, str]) -> Optional[Dict[str, Any]]:
+    repo_slug = repo_slug.lower()
     url = f"{BASE}/repositories/{workspace}/{repo_slug}/branch-restrictions"
     r = http_post(url, auth, headers, rule)
 
@@ -109,6 +113,7 @@ def create_branch_restriction(workspace: str, repo_slug: str, rule: Dict[str, An
 
 
 def get_repo_group_permissions(workspace: str, repo_slug: str, auth: HTTPBasicAuth, headers: Dict[str, str]) -> Set[str]:
+    repo_slug = repo_slug.lower()
     url = f"{BASE}/repositories/{workspace}/{repo_slug}/permissions-config/groups?pagelen={PAGELEN}"
     groups = set()
     while url:
@@ -124,6 +129,7 @@ def get_repo_group_permissions(workspace: str, repo_slug: str, auth: HTTPBasicAu
 
 
 def add_group_to_repo(workspace: str, repo_slug: str, group_slug: str, auth: HTTPBasicAuth, headers: Dict[str, str]) -> None:
+    repo_slug = repo_slug.lower()
     url = f"{BASE}/repositories/{workspace}/{repo_slug}/permissions-config/groups/{group_slug}"
     payload = {"permission": "write"}  # "write" is sufficient for branch restrictions
     r = requests.put(url, auth=auth, headers=headers, json=payload)
@@ -136,6 +142,7 @@ def add_group_to_repo(workspace: str, repo_slug: str, group_slug: str, auth: HTT
 
 
 def ensure_groups_in_repo(workspace: str, repo_slug: str, allow_groups: List[str], auth: HTTPBasicAuth, headers: Dict[str, str]) -> None:
+    repo_slug = repo_slug.lower()
     existing_groups = get_repo_group_permissions(workspace, repo_slug, auth, headers)
     for group_slug in allow_groups:
         if group_slug and group_slug not in existing_groups:
@@ -146,6 +153,8 @@ def ensure_rules_for_branch(workspace: str, repo_slug: str, branch_or_type: str,
                             allow_groups: List[str],
                             auth: HTTPBasicAuth, headers: Dict[str, str],
                             use_branch_type: bool = False) -> None:
+    repo_slug = repo_slug.lower()
+
     # Ensure all groups are added to the repo before applying restrictions
     # Only ensure groups if any are specified
     if allow_groups:
@@ -232,6 +241,7 @@ def ensure_rules_for_branch(workspace: str, repo_slug: str, branch_or_type: str,
 
 def delete_branch_restriction(workspace: str, repo_slug: str, restriction_id: str,
                               auth: HTTPBasicAuth, headers: Dict[str, str]) -> None:
+    repo_slug = repo_slug.lower()
     url = f"{BASE}/repositories/{workspace}/{repo_slug}/branch-restrictions/{restriction_id}"
     r = requests.delete(url, auth=auth, headers=headers)
     if r.status_code in (200, 204):
@@ -243,6 +253,7 @@ def delete_branch_restriction(workspace: str, repo_slug: str, restriction_id: st
 CONFIRM_DELETE_EXISTING_RULES = os.getenv("CONFIRM_DELETE_EXISTING_RULES", "").lower()
 
 def prompt_delete_existing_restrictions(workspace: str, repo_slug: str, auth: HTTPBasicAuth, headers: Dict[str, str]) -> None:
+    repo_slug = repo_slug.lower()
     restrictions = list_branch_restrictions(workspace, repo_slug, auth, headers)
     if restrictions:
         print(f"\n[!] Repository '{repo_slug}' has {len(restrictions)} existing branch restriction(s).")
@@ -333,7 +344,7 @@ def main():
     branches = [b.strip() for b in args.branches.split(",") if b.strip()]
     allow_groups = [g.strip() for g in args.groups.split(",") if g.strip()]
 
-    repositories = [r.strip() for r in args.repositories.split(",") if r.strip()]
+    repositories = [r.strip().lower() for r in args.repositories.split(",") if r.strip()]
     only = set(repositories) if repositories else set()
 
     branch_types = [t.strip() for t in args.branch_type.split(",") if t.strip()]
@@ -386,7 +397,7 @@ def main():
 
     try:
         for repo in get_all_repos(workspace, auth, headers):
-            slug = repo["slug"]
+            slug = repo["slug"].lower()
             if only and slug not in only:
                 continue
             print(f"\n==> {slug}")
